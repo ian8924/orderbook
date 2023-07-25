@@ -3,7 +3,7 @@
 This template should help get you started developing with Vue 3 in Vite.
 
 
-# 環境要求
+# Environmental requirement
 - Node: v16.17.0
 
 ## Recommended IDE Setup

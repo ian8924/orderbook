@@ -166,10 +166,10 @@ const backgroundWithStyle = (currentValue, totalValue) => {
         display: flex;
         position: relative;
         &.bg-flash.buy {
-          background-color: rgba(0, 177, 93, 0.5);
+          background-color: $flash_buy_color;
         }
         &.bg-flash.sell {
-          background-color: rgba(255, 91, 90, 0.5);
+          background-color: $flash_lose_color;
         }
         .bg-line {
           height: 90%;
@@ -179,10 +179,10 @@ const backgroundWithStyle = (currentValue, totalValue) => {
           right: 0;
           z-index: 0;
           &.buy {
-            background-color: rgba(16, 186, 104, 0.12);
+            background-color: $line_buy_color;
           }
           &.sell {
-            background-color: rgba(255, 90, 90, 0.12);
+            background-color: $line_lose_color;
           }
         }
         .td {
