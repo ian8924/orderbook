@@ -8,19 +8,15 @@ export const useWebsocketStore = defineStore('websocketStore', () => {
     constructor(url, sendData) {
       this.wsUrl = url
       this.sendData = sendData
-      this.socketOn = false
-      this.lockReconnectTop = false
-      this.timeoutTop = null
       this.socket = null
-      this.seqNum = 0
+      this.heartMessage = {
+        id: 0,
+        method: 'public/respond-heartbeat'
+      }
     }
 
     connectSocket = () => {
       return new Promise((resolve) => {
-        if (this.socketOn) {
-          resolve(true)
-          return
-        }
         this.socket = new WebSocket(this.wsUrl)
         this.socket.binaryType = 'arraybuffer'
         this.webSocketEvent()
@@ -28,10 +24,6 @@ export const useWebsocketStore = defineStore('websocketStore', () => {
         this.websocketOnMessage()
         // 確認連接
         this.socket.onopen = () => {
-          console.log('websocket connected!!')
-          // 開始心跳檢測
-          this.heartCheck()
-          this.socketOn = true
           this.socketSend()
           resolve(true)
         }
@@ -42,7 +34,6 @@ export const useWebsocketStore = defineStore('websocketStore', () => {
       // 重新連線(onopen)
       this.socket.onclose = () => {
         console.error('websocket close!!')
-        this.socketOn = false
         this.reconnectTop()
       }
 
@@ -58,65 +49,49 @@ export const useWebsocketStore = defineStore('websocketStore', () => {
         // 監聽訊息(onmessage)
         const data = JSON.parse(event.data)
         wsDataStore.setWebSockData(data)
-      }
-    }
-
-    // 檢測心跳
-    heartCheck = () => {
-      const timeout = 30000
-      console.log('正在檢測心跳')
-      if (this.socket.readyState !== 3) {
-        clearTimeout(this.timeoutTop)
-        if (!this.lockReconnectTop) {
-          this.timeoutTop = setTimeout(() => {
-            console.log('未檢測到心跳')
-            this.socket.close()
-          }, timeout)
+        if (data.method === 'public/heartbeat') {
+          this.heartMessage = {
+            ...this.heartMessage,
+            id: data.id
+          }
+          this.socket.send(JSON.stringify(this.heartMessage))
         }
       }
     }
 
     // 重新連線
     reconnectTop = () => {
-      if (!this.lockReconnectTop) {
-        this.lockReconnectTop = true
-        setTimeout(() => {
-          console.log('即將重新連線')
-          this.connectSocket()
-        }, 3000)
-      }
+      setTimeout(() => {
+        console.log('即將重新連線')
+        this.connectSocket()
+      }, 3000)
     }
 
     // 發送事件
     socketSend = () => {
       this.socket.send(JSON.stringify(this.sendData))
     }
-
   }
 
-  // 最新價格 websocket
-  const WebSocketLastPrice = new webSockStore('wss://ws.btse.com/ws/futures', {
-    "op": "subscribe",
-    "args": [
-      "tradeHistoryApi:BTCPFC"
-    ]
-  })
-  // 訂單簿 websocket
-  const WebSocketOrderBook = new webSockStore('wss://ws.btse.com/ws/oss/futures', {
-    "op": "subscribe",
-    "args": [
-      "update:BTC-PERP"
-    ]
+  // websocket
+  const WebSocketTest = new webSockStore('wss://stream.crypto.com/exchange/v1/market', {
+    id: 1,
+    method: 'subscribe',
+    params: {
+      channels: [
+        'book.BTCUSD-PERP.10',
+        'book.ETHUSD-PERP.10',
+        'book.SOL_USDT.10',
+        'book.XRP_USDT.10',
+        'book.ADA_USDT.10',
+        'book.MATIC_USDT.10',
+        'candlestick.M1.BTCUSD-PERP'
+      ]
+    },
+    nonce: 1654784123465
   })
 
   return {
-    // 最新價格
-    connectSocketLastPrice: WebSocketLastPrice.connectSocket,
-    socketSendLastPrice: WebSocketLastPrice.socketSend,
-    // 訂單簿
-    connectSocketOrderBook: WebSocketOrderBook.connectSocket,
-    socketSendOrderBook: WebSocketOrderBook.socketSend,
+    connectSocket: WebSocketTest.connectSocket
   }
 })
-
-
